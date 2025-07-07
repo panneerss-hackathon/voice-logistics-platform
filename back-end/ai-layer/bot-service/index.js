@@ -5,7 +5,14 @@ const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
 const FormData = require('form-data');
-const { BotFrameworkAdapter, ConversationState, ActivityHandler, MemoryStorage } = require('botbuilder');
+const {
+    ActivityHandler,
+    MemoryStorage,
+    ConversationState,
+    ConfigurationServiceClientCredentialFactory,
+    createBotFrameworkAuthenticationFromConfiguration,
+    CloudAdapter
+} = require('botbuilder');
 const { CosmosDbPartitionedStorage } = require('botbuilder-azure');
 
 const detectIntent = require('./services/intentDetectionService');
@@ -16,19 +23,23 @@ const synthesizeSpeech = require('./services/textToSpeechService');
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-const adapter = new BotFrameworkAdapter({
-    appId: process.env.MICROSOFT_APP_ID || '',
-    appPassword: process.env.MICROSOFT_APP_PASSWORD || ''
+// Adapter setup
+const credentialsFactory = new ConfigurationServiceClientCredentialFactory({
+    MicrosoftAppId: process.env.MICROSOFT_APP_ID || '',
+    MicrosoftAppPassword: process.env.MICROSOFT_APP_PASSWORD || '',
+    MicrosoftAppType: 'MultiTenant'
 });
+const botFrameworkAuth = createBotFrameworkAuthenticationFromConfiguration(null, credentialsFactory);
+const adapter = new CloudAdapter(botFrameworkAuth);
 
-// Turn error handling for dev
+// Error handling
 adapter.onTurnError = async (context, error) => {
     console.error(`[onTurnError] ${error}`);
-    await context.sendActivity('Oops. Something went wrong!');
+    await context.sendActivity('The bot encountered an error.');
 };
 
+// State storage
 const useMockDb = process.env.USE_MOCK_DB === 'true';
-
 const storage = useMockDb
     ? new MemoryStorage()
     : new CosmosDbPartitionedStorage({
@@ -41,6 +52,7 @@ const storage = useMockDb
 const conversationState = new ConversationState(storage);
 const userStateAccessor = conversationState.createProperty('UserConversationState');
 
+// Bot logic
 class CustomVoiceBot extends ActivityHandler {
     constructor() {
         super();
@@ -74,12 +86,13 @@ class CustomVoiceBot extends ActivityHandler {
                 ? `Please provide the following details: ${missing.join(', ')}`
                 : `Got it. You want to ${intent}. Details: ${JSON.stringify(entities)}`;
 
-        try {
-             await context.sendActivity(reply);
-        } catch (err) {
-            console.warn("⚠️ Failed to send activity (possibly in test mode):", err.message);
-        }
-        await conversationState.saveChanges(context);
+            try {
+                await context.sendActivity(reply);
+            } catch (err) {
+                console.warn("⚠️ Failed to send activity:", err.message);
+            }
+
+            await conversationState.saveChanges(context);
             await next();
         });
 
@@ -94,8 +107,8 @@ const bot = new CustomVoiceBot();
 
 app.use(express.json());
 
-app.post('/api/messages', (req, res) => {
-    adapter.processActivity(req, res, async (context) => {
+app.post('/api/messages', async (req, res) => {
+    await adapter.process(req, res, async (context) => {
         await bot.run(context);
     });
 });
@@ -106,9 +119,11 @@ app.post('/api/audio', upload.single('audio'), async (req, res) => {
         const formData = new FormData();
         formData.append('audio', fs.createReadStream(audioPath));
 
-        const sttResponse = useMockDb ? { data: { text: 'Mock user input text' } } : await axios.post('http://localhost:5001/transcribe', formData, {
-            headers: formData.getHeaders()
-        });
+        const sttResponse = useMockDb
+            ? { data: { text: 'Mock user input text' } }
+            : await axios.post('http://localhost:5001/transcribe', formData, {
+                  headers: formData.getHeaders()
+              });
 
         const userText = sttResponse.data.text;
         const userId = req.headers['x-user-id'] || 'default-user';
@@ -186,4 +201,4 @@ Content-Type: audio/wav
 });
 
 const PORT = process.env.PORT || 3978;
-app.listen(PORT, () => console.log(`🚀 Production Bot running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Future-proof Bot running on port ${PORT}`));
