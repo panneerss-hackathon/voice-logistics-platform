@@ -1,5 +1,3 @@
-
-// index.js
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
@@ -7,7 +5,7 @@ const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
 const FormData = require('form-data');
-const { BotFrameworkAdapter, ConversationState, ActivityHandler } = require('botbuilder');
+const { BotFrameworkAdapter, ConversationState, ActivityHandler, MemoryStorage } = require('botbuilder');
 const { CosmosDbPartitionedStorage } = require('botbuilder-azure');
 
 const detectIntent = require('./services/intentDetectionService');
@@ -17,18 +15,30 @@ const synthesizeSpeech = require('./services/textToSpeechService');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
+
 const adapter = new BotFrameworkAdapter({
-    appId: process.env.MICROSOFT_APP_ID,
-    appPassword: process.env.MICROSOFT_APP_PASSWORD
+    appId: process.env.MICROSOFT_APP_ID || '',
+    appPassword: process.env.MICROSOFT_APP_PASSWORD || ''
 });
 
-const cosmosStorage = new CosmosDbPartitionedStorage({
-    cosmosDbEndpoint: process.env.COSMOS_DB_ENDPOINT,
-    authKey: process.env.COSMOS_DB_KEY,
-    databaseId: process.env.COSMOS_DB_DATABASE,
-    containerId: process.env.COSMOS_DB_CONTAINER
-});
-const conversationState = new ConversationState(cosmosStorage);
+// Turn error handling for dev
+adapter.onTurnError = async (context, error) => {
+    console.error(`[onTurnError] ${error}`);
+    await context.sendActivity('Oops. Something went wrong!');
+};
+
+const useMockDb = process.env.USE_MOCK_DB === 'true';
+
+const storage = useMockDb
+    ? new MemoryStorage()
+    : new CosmosDbPartitionedStorage({
+        cosmosDbEndpoint: process.env.COSMOS_DB_ENDPOINT,
+        authKey: process.env.COSMOS_DB_KEY,
+        databaseId: process.env.COSMOS_DB_DATABASE,
+        containerId: process.env.COSMOS_DB_CONTAINER
+    });
+
+const conversationState = new ConversationState(storage);
 const userStateAccessor = conversationState.createProperty('UserConversationState');
 
 class CustomVoiceBot extends ActivityHandler {
@@ -64,8 +74,12 @@ class CustomVoiceBot extends ActivityHandler {
                 ? `Please provide the following details: ${missing.join(', ')}`
                 : `Got it. You want to ${intent}. Details: ${JSON.stringify(entities)}`;
 
-            await context.sendActivity(reply);
-            await conversationState.saveChanges(context);
+        try {
+             await context.sendActivity(reply);
+        } catch (err) {
+            console.warn("⚠️ Failed to send activity (possibly in test mode):", err.message);
+        }
+        await conversationState.saveChanges(context);
             await next();
         });
 
@@ -92,7 +106,7 @@ app.post('/api/audio', upload.single('audio'), async (req, res) => {
         const formData = new FormData();
         formData.append('audio', fs.createReadStream(audioPath));
 
-        const sttResponse = await axios.post('http://localhost:5001/transcribe', formData, {
+        const sttResponse = useMockDb ? { data: { text: 'Mock user input text' } } : await axios.post('http://localhost:5001/transcribe', formData, {
             headers: formData.getHeaders()
         });
 
