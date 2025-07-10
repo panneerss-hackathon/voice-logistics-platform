@@ -1,7 +1,10 @@
+import axios from 'axios';
+
 const dummy = process.env.USE_MOCK_SERVICE === 'true';
-module.exports = async function checkMissingFields(intent, entities) {
+
+export async function checkMissingFields(intent: string, entities: Record<string, any>): Promise<string[]> {
   if (dummy) return ['pickupDate'];
-  const axios = require('axios');
+
   const response = await axios.post('http://localhost:5004/missing-fields', { intent, entities });
   return response.data.missing || [];
-};
+}
