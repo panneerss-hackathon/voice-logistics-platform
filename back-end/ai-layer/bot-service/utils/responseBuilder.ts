@@ -1,19 +1,23 @@
-import express from 'express';
+import { Response } from 'express';
 
-export function sendMultipartResponse(res: express.Response, text: string, audioBuffer: Buffer) {
-  res.setHeader('Content-Type', 'multipart/form-data; boundary=VOICE-REPLY');
+export function sendMultipartResponse(res: Response, text: string, audio: string | Buffer) {
+  if (typeof audio === 'string') {
+    return res.json({ text, audioUrl: audio });
+  }
 
-  return res.end(Buffer.concat([
-    Buffer.from(`--VOICE-REPLY
-Content-Disposition: form-data; name="text"
+  const boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW';
+  res.setHeader('Content-Type', `multipart/form-data; boundary=${boundary}`);
 
-${text}
---VOICE-REPLY
-Content-Disposition: form-data; name="audio"; filename="reply.wav"
-Content-Type: audio/wav
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="text"\r\n\r\n${text}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="audio"; filename="audio.mp3"\r\n` +
+    `Content-Type: audio/mpeg\r\n\r\n`;
 
-`),
-    audioBuffer,
-    Buffer.from('\r\n--VOICE-REPLY--')
-  ]));
+  const end = `\r\n--${boundary}--`;
+
+  res.write(body);
+  res.write(audio);
+  res.end(end);
 }

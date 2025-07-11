@@ -4,15 +4,16 @@ import { conversationState, userStateAccessor } from '../../state/storage';
 import { Messages } from '../../utils/messages';
 import { isYes, isNo } from '../../utils/confirmationUtils';
 import { stripEmojis } from '../../utils/ttsUtils';
+import { logInfo, logError } from '../../utils/logger';
 
-export async function processMessage(userId: string, userText: string): Promise<{ textReply: string; audioReply: Buffer }> {
+export async function processMessage(userId: string, userText: string): Promise<{ textReply: string; audioReply: string | Buffer }> {
   const dummyContext = {
     activity: {
       type: 'message',
       text: userText,
       from: { id: userId },
-      channelId: 'custom-channel', // ✅ Required for ConversationState
-      conversation: { id: `conv-${userId}` } // optional but helpful
+      channelId: 'custom-channel', // ✅ Needed for ConversationState
+      conversation: { id: `conv-${userId}` } // ✅ Needed for ConversationState
     },
     sendActivity: async () => {},
     turnState: new Map()
@@ -25,6 +26,8 @@ export async function processMessage(userId: string, userText: string): Promise<
     missingFields: [],
     awaitingConfirmation: false
   }));
+
+  logInfo('User message received', { userId, text: userText });
 
   if (userState.awaitingConfirmation) {
     const confirmIntent = await Technical.detectIntent(userText);
@@ -59,14 +62,17 @@ export async function processMessage(userId: string, userText: string): Promise<
     await conversationState.saveChanges(dummyContext as any);
     const spokenText = stripEmojis(textReply);
     const audioReply = await Technical.synthesizeSpeech(spokenText, true);
-    return { textReply, audioReply: audioReply as Buffer };
+
+    logInfo('Confirmation handled', { userId, confirmation: confirmation, result: textReply });
+    return { textReply, audioReply };
   }
 
   const intent = await Technical.detectIntent(userText);
   if (!intent || intent === 'Unknown') {
     const fallback = Messages.Fallback;
     const buffer = await Technical.synthesizeSpeech(stripEmojis(fallback), true);
-    return { textReply: fallback, audioReply: buffer as Buffer };
+    logError('Unknown intent fallback', { userId, text: userText });
+    return { textReply: fallback, audioReply: buffer };
   }
 
   const entities = await Technical.extractEntities(userText);
@@ -80,6 +86,7 @@ export async function processMessage(userId: string, userText: string): Promise<
 
   if (missing.length > 0) {
     textReply = `Please provide the following details: ${missing.join(', ')}`;
+    logInfo('Missing fields identified', { userId, intent, missing });
   } else {
     switch (intent) {
       case 'CreateShipment':
@@ -103,10 +110,11 @@ export async function processMessage(userId: string, userText: string): Promise<
       default:
         textReply = `Intent detected: ${intent}`;
     }
+    logInfo('Intent handled', { userId, intent, response: textReply });
   }
 
   await conversationState.saveChanges(dummyContext as any);
   const spokenText = stripEmojis(textReply);
   const audioReply = await Technical.synthesizeSpeech(spokenText, true);
-  return { textReply, audioReply: audioReply as Buffer };
+  return { textReply, audioReply };
 }
