@@ -1,17 +1,17 @@
 import axios from 'axios';
 import { logInfo, logError } from '../../utils/logger';
+import { AppConfig } from '../../config/config';
 
-const dummy = process.env.USE_MOCK_SERVICE === 'true'; // ✅ Add this
 
 export async function synthesizeSpeech(text: string, returnBuffer = false): Promise<Buffer | string> {
-  if (dummy) {
+  if (AppConfig.USE_MOCK_SERVICE) {
     logInfo('🧪 Mock TTS synthesis used', { text, returnBuffer });
     return returnBuffer ? Buffer.from('MOCK_AUDIO') : 'mock-audio-url.mp3';
   }
 
   try {
     const response = await axios.post(
-      'http://localhost:5005/speak',
+      AppConfig.TTS_URL,
       { text },
       { responseType: returnBuffer ? 'arraybuffer' : 'json' }
     );

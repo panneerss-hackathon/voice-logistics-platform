@@ -7,6 +7,7 @@ import axios from 'axios';
 import { processMessage } from '../services/technical/processMessage';
 import { sendMultipartResponse } from '../utils/responseBuilder';
 import { logInfo, logError } from '../utils/logger';
+import { AppConfig } from '../config/config';
 
 export function registerConverseRoute(app: express.Express, upload: any) {
   app.post('/api/converse', upload.single('audio'), async (req, res) => {
@@ -32,9 +33,9 @@ export function registerConverseRoute(app: express.Express, upload: any) {
           const formData = new FormData();
           formData.append('audio', fs.createReadStream(path.resolve(req.file.path)));
 
-          const sttResponse = await axios.post('http://localhost:5001/transcribe', formData, {
+          const sttResponse = await axios.post(AppConfig.STT_URL, formData, {
             headers: formData.getHeaders(),
-            timeout: 5000
+            timeout: AppConfig.STT_TIMEOUT
           });
 
           userText = sttResponse.data.text;

@@ -1,16 +1,15 @@
 import axios from 'axios';
 import { logInfo, logError } from '../../utils/logger';
-
-const dummy = process.env.USE_MOCK_SERVICE === 'true';
+import { AppConfig } from '../../config/config';
 
 export async function detectIntent(text: string): Promise<string> {
-  if (dummy) {
+  if (AppConfig.USE_MOCK_SERVICE) {
     logInfo('🧪 Mock intent detection used.', { text });
     return 'CreateShipment';
   }
 
   try {
-    const response = await axios.post('http://localhost:5002/intent', { text });
+    const response = await axios.post(AppConfig.INTENT_DETECTOR_URL, { text });
     logInfo('✅ Intent detected', { text, intent: response.data.intent });
     return response.data.intent;
   } catch (err: any) {
