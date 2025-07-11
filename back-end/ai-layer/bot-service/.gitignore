@@ -1,2 +1,3 @@
 node_modules
-p
+/package-lock.json
+/dist/

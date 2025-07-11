@@ -19,5 +19,5 @@ app.post('/api/messages', async (req, res) => {
 
 registerConverseRoute(app, upload); // ✅ Unified text/voice route
 
-const PORT = process.env.PORT || 3978;
+const PORT = process.env.PORT ?? 3978;
 app.listen(PORT, () => console.log(`🚀 Bot running on port ${PORT}`));
