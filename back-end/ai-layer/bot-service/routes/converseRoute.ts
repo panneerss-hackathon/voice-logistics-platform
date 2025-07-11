@@ -8,6 +8,7 @@ import { processMessage } from '../services/technical/processMessage';
 import { sendMultipartResponse } from '../utils/responseBuilder';
 import { logInfo, logError } from '../utils/logger';
 import { AppConfig } from '../config/config';
+import { convertSpeechToText } from '../services/technical/speechToText';
 
 export function registerConverseRoute(app: express.Express, upload: any) {
   app.post('/api/converse', upload.single('audio'), async (req, res) => {
@@ -23,28 +24,15 @@ export function registerConverseRoute(app: express.Express, upload: any) {
       let userText = '';
 
       if (isAudio && req.file) {
-        const allowedTypes = ['audio/m4a', 'audio/x-m4a', 'audio/mp3', 'audio/mpeg', 'audio/wav'];
-        if (!allowedTypes.includes(req.file.mimetype)) {
-          logError('Unsupported audio format', { userId, mimetype: req.file.mimetype });
-          return res.status(400).send('Unsupported audio format.');
-        }
-
-        try {
-          const formData = new FormData();
-          formData.append('audio', fs.createReadStream(path.resolve(req.file.path)));
-
-          const sttResponse = await axios.post(AppConfig.STT_URL, formData, {
-            headers: formData.getHeaders(),
-            timeout: AppConfig.STT_TIMEOUT
-          });
-
-          userText = sttResponse.data.text;
-          logInfo('STT successful', { userId, userText });
-        } catch (err: any) {
-          logError('STT failed, falling back to typed text', { userId, error: err.message });
-        }
+      const allowedTypes = ['audio/m4a', 'audio/x-m4a', 'audio/mp3', 'audio/mpeg', 'audio/wav'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        logError('❌ Unsupported audio format', { userId, mimetype: req.file.mimetype });
+        return res.status(400).send('Unsupported audio format.');
       }
 
+      userText = await convertSpeechToText(req.file.path, userId);
+      }
+      
       if (req.body?.text) {
         userText = req.body.text;
         logInfo('Received typed text', { userId, userText });
