@@ -1,3 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: text-to-speech-service
+
 azure:
   speech:
-    key: ${AZURE_SPEECH_KEY} ...
+    key: ${AZURE_SPEECH_KEY}
+    region: ${AZURE_SPEECH_REGION}
+    voice: en-US-JennyNeural
+    output-format: Audio16Khz32KBitRateMonoMp3
+
+logging:
+  level:
+    root: INFO
+    com.jarvis.texttospeech: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

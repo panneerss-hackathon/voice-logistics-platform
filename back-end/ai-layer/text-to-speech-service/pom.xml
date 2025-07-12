@@ -15,7 +15,7 @@
     </parent>
 
     <groupId>com.jarvis</groupId>
-    <artifactId>speech-to-text-service</artifactId>
+    <artifactId>text-to-speech-service</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -92,6 +92,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
@@ -112,6 +113,7 @@
                     </java>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -127,14 +129,15 @@
                 </executions>
                 <configuration>
                     <configLocation>google_checks.xml</configLocation>
-                    <encoding>${encoding}</encoding>
                     <failOnViolation>true</failOnViolation>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
