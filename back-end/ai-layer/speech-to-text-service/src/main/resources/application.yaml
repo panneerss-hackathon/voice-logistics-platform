@@ -1,0 +1,12 @@
+server:
+  port: 8081
+
+azure:
+  speech:
+    key: YOUR_AZURE_SPEECH_KEY
+    region: YOUR_REGION
+    language: en-US
+    endpoint-template: https://{region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1
+    content-type: audio/wav
+    accept: application/json
+    user-agent: SpringBoot-STT-Service
