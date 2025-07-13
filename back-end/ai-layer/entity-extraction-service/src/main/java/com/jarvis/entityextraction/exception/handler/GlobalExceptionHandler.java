@@ -1,6 +1,8 @@
-package com.jarvis.entityextraction.exception;
+package com.jarvis.entityextraction.exception.handler;
 
 import java.util.Map;
+
+import com.jarvis.entityextraction.exception.EntityExtractionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
