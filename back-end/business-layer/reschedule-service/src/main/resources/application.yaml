@@ -1,5 +1,5 @@
 server:
-  port: 8084
+  port: 8085
 
 azure:
   servicebus:
@@ -8,7 +8,7 @@ azure:
 
 spring:
   datasource:
-    url: jdbc:sqlserver://<YOUR_SQL_HOST>:1433;databaseName=tracking_db
+    url: jdbc:sqlserver://<YOUR_SQL_HOST>:1433;databaseName=reschedule_db
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
@@ -23,4 +23,4 @@ spring:
 logging:
   level:
     root: INFO
-    com.jarvis.tracking: DEBUG
+    com.jarvis.reschedule: DEBUG

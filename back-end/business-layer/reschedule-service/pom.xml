@@ -12,7 +12,7 @@
     </parent>
 
     <groupId>com.jarvis</groupId>
-    <artifactId>tracking-service</artifactId>
+    <artifactId>reschedule-service</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
