@@ -1,0 +1,64 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: shipment-service
+
+  datasource:
+    url: jdbc:sqlserver://<DB-HOST>:1433;databaseName=shipmentdb
+    username: xxxxx
+    password: xxxxx
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.SQLServerDialect
+
+  jackson:
+    serialization:
+      indent_output: true
+
+azure:
+  servicebus:
+    connection-string: ${AZURE_SERVICE_BUS_CONNECTION}
+    topic: shipment-events
+
+entity-config:
+  confidenceThreshold: 0.8
+  azureOpenAiEndpoint: https://YOUR_AZURE_OPENAI_ENDPOINT
+  azureOpenAiKey: xxxxxxxxxxxxxxxxxx
+  model: gpt-4
+  cases:
+    CreateShipment:
+      allowedFields:
+        - sender_name
+        - sender_address
+        - sender_phone
+        - receiver_name
+        - receiver_address
+        - receiver_phone
+        - package_weight
+        - package_description
+        - pickup_required
+        - delivery_type
+      requiredFields:
+        - sender_name
+        - sender_address
+        - receiver_name
+        - receiver_address
+        - package_weight
+        - delivery_type
+
+logging:
+  level:
+    root: INFO
+    com.jarvis.shipment: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
