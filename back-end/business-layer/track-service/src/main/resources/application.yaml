@@ -1,0 +1,26 @@
+server:
+  port: 8084
+
+azure:
+  servicebus:
+    connection-string: ${AZURE_SERVICE_BUS_CONNECTION}
+    topic: shipment-events
+
+spring:
+  datasource:
+    url: jdbc:sqlserver://<YOUR_SQL_HOST>:1433;databaseName=tracking_db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    root: INFO
+    com.jarvis.tracking: DEBUG
