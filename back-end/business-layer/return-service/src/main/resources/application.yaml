@@ -1,0 +1,24 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: return-service
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=returns
+    username: sa
+    password: yourStrong(!)Password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+azure:
+  servicebus:
+    connection-string: ${AZURE_SERVICE_BUS_CONNECTION}
+    topic: shipment-events
+
+logging:
+  level:
+    root: INFO
+    com.jarvis: DEBUG
